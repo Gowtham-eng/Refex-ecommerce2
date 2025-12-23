@@ -49,9 +49,23 @@ export default function ProductPage() {
   };
 
   const handleAddToCart = async () => {
+    // Store in local cart if not logged in
     if (!isAuthenticated) {
-      toast.error('Please login to add items to cart');
-      navigate('/login');
+      const localCart = JSON.parse(localStorage.getItem('localCart') || '[]');
+      const existingIdx = localCart.findIndex(item => item.product_id === product.id);
+      if (existingIdx >= 0) {
+        localCart[existingIdx].quantity += quantity;
+      } else {
+        localCart.push({ product_id: product.id, quantity, product, variant: selectedVariant });
+      }
+      localStorage.setItem('localCart', JSON.stringify(localCart));
+      toast.success('Added to cart', {
+        description: `${quantity}x ${product.name}`,
+        action: {
+          label: 'View Cart',
+          onClick: () => navigate('/cart'),
+        },
+      });
       return;
     }
 

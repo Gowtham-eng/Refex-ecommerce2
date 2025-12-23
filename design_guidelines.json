@@ -1,0 +1,180 @@
+{
+  "identity": {
+    "name": "E1",
+    "role": "The Anti-AI Designer",
+    "mission": "Create a top 1% luxury airport e-commerce experience that feels like a First Class Lounge—exclusive, seamless, and emotionally resonant."
+  },
+  "design_philosophy": {
+    "core_concept": "The Digital Concierge",
+    "emotional_tone": "Calm, Efficient, Luxurious, Trustworthy",
+    "visual_style": "Archetype 5 (Jewel & Luxury) mixed with Archetype 4 (Swiss/High-Contrast)",
+    "key_principles": [
+      "Fusion over Imitation: Mix Airport Utility with High-Fashion Editorial.",
+      "Emotion First: Every interaction should feel like a VIP service.",
+      "Content is King: Products are the heroes; UI is the stage.",
+      "Negative Space: Generous padding to signal luxury (Time = Space)."
+    ]
+  },
+  "typography": {
+    "strategy": "The Old Money Tech",
+    "headings": {
+      "font_family": "Playfair Display, serif",
+      "usage": "Hero titles, Section headers, Brand names",
+      "classes": "font-serif tracking-tight font-medium"
+    },
+    "body": {
+      "font_family": "Manrope, sans-serif",
+      "usage": "UI elements, Product descriptions, Navigation",
+      "classes": "font-sans tracking-normal"
+    },
+    "mono": {
+      "font_family": "JetBrains Mono, monospace",
+      "usage": "Order numbers, Flight codes, SKU details",
+      "classes": "font-mono text-xs tracking-wider uppercase"
+    },
+    "installation": "Import via Google Fonts in index.css: @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');"
+  },
+  "colors": {
+    "palette_name": "Runway Gold",
+    "mode": "Light",
+    "base": {
+      "background": "#FAFAF9",
+      "foreground": "#1C1917",
+      "card": "#FFFFFF",
+      "card_foreground": "#1C1917",
+      "popover": "#FFFFFF",
+      "popover_foreground": "#1C1917",
+      "primary": "#0F172A",
+      "primary_foreground": "#F8FAFC",
+      "secondary": "#F5E6D3",
+      "secondary_foreground": "#1C1917",
+      "muted": "#F5F5F4",
+      "muted_foreground": "#78716C",
+      "accent": "#F5E6D3",
+      "accent_foreground": "#1C1917",
+      "destructive": "#EF4444",
+      "destructive_foreground": "#FAFAF9",
+      "border": "#E7E5E4",
+      "input": "#E7E5E4",
+      "ring": "#0F172A"
+    },
+    "usage_rules": [
+      "Never use pure black (#000000). Use #1C1917.",
+      "Primary color (#0F172A) is for 'Buy Now' and primary actions only.",
+      "Secondary color (#F5E6D3) is for Loyalty Points and 'Gold' member accents.",
+      "Backgrounds should be #FAFAF9 (Warm Grey) to avoid clinical white sterility."
+    ]
+  },
+  "visual_enhancers": {
+    "glassmorphism": {
+      "style": "Crystal Glass",
+      "classes": "bg-white/70 backdrop-blur-xl border border-white/20 shadow-sm"
+    },
+    "shadows": {
+      "card": "shadow-[0_8px_30px_rgb(0,0,0,0.04)]",
+      "hover": "shadow-[0_8px_30px_rgb(0,0,0,0.12)]",
+      "dropdown": "shadow-[0_20px_50px_rgb(0,0,0,0.1)]"
+    },
+    "borders": {
+      "default": "border border-border/50",
+      "active": "border-primary/20"
+    },
+    "radius": {
+      "default": "rounded-none",
+      "buttons": "rounded-full",
+      "cards": "rounded-sm"
+    }
+  },
+  "grids_and_layouts": {
+    "marketplace": {
+      "name": "The Tetris Grid",
+      "structure": "grid-cols-1 md:grid-cols-12 gap-8",
+      "items": [
+        { "role": "Hero Product", "span": "col-span-full md:col-span-8 row-span-2" },
+        { "role": "Feature", "span": "col-span-4 row-span-1" },
+        { "role": "Vertical List", "span": "col-span-4 row-span-2" }
+      ]
+    },
+    "dashboard": {
+      "name": "The Control Room",
+      "structure": "grid-cols-1 md:grid-cols-4 gap-6",
+      "items": [
+        { "role": "Metric", "span": "col-span-1" },
+        { "role": "Main Chart", "span": "col-span-2 row-span-2" },
+        { "role": "Activity Feed", "span": "col-span-1 row-span-2" }
+      ]
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8 py-6 text-lg font-medium transition-all duration-300 hover:scale-105",
+      "secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-full px-6 py-4 font-medium",
+      "ghost": "hover:bg-muted hover:text-foreground rounded-full px-4 py-2"
+    },
+    "cards": {
+      "product": "group relative overflow-hidden bg-card hover:shadow-lg transition-all duration-500 border-none",
+      "dashboard": "bg-card border border-border/40 shadow-sm p-6"
+    },
+    "inputs": {
+      "default": "h-12 bg-transparent border-b border-input rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50"
+    },
+    "navigation": {
+      "wrapper": "sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60",
+      "link": "text-sm font-medium transition-colors hover:text-primary"
+    }
+  },
+  "motion": {
+    "library": "framer-motion",
+    "transitions": {
+      "page_load": {
+        "initial": { "opacity": 0, "y": 20 },
+        "animate": { "opacity": 1, "y": 0 },
+        "exit": { "opacity": 0, "y": -20 },
+        "transition": { "duration": 0.4, "ease": "easeOut" }
+      },
+      "hover_lift": {
+        "whileHover": { "y": -4 },
+        "transition": { "duration": 0.2 }
+      }
+    }
+  },
+  "images": {
+    "hero_background": {
+      "url": "https://images.unsplash.com/photo-1743291393141-0047030d2544?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Modern minimalist airport terminal architecture",
+      "usage": "Homepage Hero Background with overlay"
+    },
+    "luxury_product_1": {
+      "url": "https://images.unsplash.com/photo-1587304946976-cbbbafce2133?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Luxury perfume bottle with gold lid",
+      "usage": "Featured Product / Duty Free Highlight"
+    },
+    "lifestyle_travel": {
+      "url": "https://images.unsplash.com/photo-1567628646875-12f412c5743b?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Travelers shopping",
+      "usage": "Loyalty Program / Membership Section"
+    },
+    "abstract_texture": {
+      "url": "https://images.unsplash.com/photo-1731567387449-ca62ad06831f?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Abstract lights",
+      "usage": "Footer background or subtle overlay"
+    }
+  },
+  "universal_guidelines": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur).",
+    "You MUST NOT apply universal transition. Eg: transition: all. This results in breaking transforms.",
+    "You MUST NOT center align the app container.",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations.",
+    "NEVER: use AI assistant Emoji characters like 🤖🧠 etc for icons.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations.",
+    "Components MUST use named exports.",
+    "Pages MUST use default exports.",
+    "Use sonner for toasts."
+  ],
+  "instructions_to_main_agent": "You are building a high-end Airport E-commerce portal. Use the 'Runway Gold' palette. Implement the 'Tetris Grid' for the marketplace. Use 'Playfair Display' for all headings to give it that Vogue/Editorial look. Ensure the 'Customer Journey' feels like a VIP service—smooth, animated, and beautiful. Use the provided image URLs for the respective sections. Do not deviate from the font choices."
+}

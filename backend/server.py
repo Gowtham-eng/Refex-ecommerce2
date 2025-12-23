@@ -338,7 +338,8 @@ async def get_brand(brand_id: str):
 async def create_brand(brand: Brand):
     brand_dict = brand.model_dump()
     await db.brands.insert_one(brand_dict)
-    return brand_dict
+    created = await db.brands.find_one({"id": brand.id}, {"_id": 0})
+    return created
 
 # ============== PRODUCT ROUTES ==============
 

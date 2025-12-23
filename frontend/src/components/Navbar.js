@@ -134,9 +134,9 @@ export const Navbar = ({ selectedAirport, onAirportChange, airports = [] }) => {
                     <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer" data-testid="profile-link">
+                  <DropdownMenuItem onClick={() => navigate('/dashboard')} className="cursor-pointer" data-testid="dashboard-link">
                     <User className="mr-2 h-4 w-4" />
-                    Profile
+                    Dashboard
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/orders')} className="cursor-pointer" data-testid="orders-link">
                     <ShoppingBag className="mr-2 h-4 w-4" />

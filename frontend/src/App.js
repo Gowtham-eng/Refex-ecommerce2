@@ -21,7 +21,9 @@ import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
 import OrdersPage from './pages/OrdersPage';
+import OrderDetailPage from './pages/OrderDetailPage';
 import LoyaltyPage from './pages/LoyaltyPage';
+import DashboardPage from './pages/DashboardPage';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 

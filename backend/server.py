@@ -373,8 +373,10 @@ async def get_product(product_id: str):
 @api_router.post("/products")
 async def create_product(product: Product):
     product_dict = product.model_dump()
-    await db.products.insert_one(product_dict)
-    return product_dict
+    result = await db.products.insert_one(product_dict)
+    # Return without _id
+    created = await db.products.find_one({"id": product.id}, {"_id": 0})
+    return created
 
 # ============== CART ROUTES ==============
 

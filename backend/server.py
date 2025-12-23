@@ -936,6 +936,19 @@ async def health():
 # Include the router in the main app
 app.include_router(api_router)
 
+# Include Brand Admin and Logistics routes
+try:
+    from routes.brand_admin import brand_router
+    app.include_router(brand_router)
+except ImportError as e:
+    logging.warning(f"Could not import brand_router: {e}")
+
+try:
+    from routes.logistics import logistics_router
+    app.include_router(logistics_router)
+except ImportError as e:
+    logging.warning(f"Could not import logistics_router: {e}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,

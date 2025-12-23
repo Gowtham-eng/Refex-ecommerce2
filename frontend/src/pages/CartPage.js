@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
@@ -17,11 +17,44 @@ import { toast } from 'sonner';
 
 export default function CartPage() {
   const navigate = useNavigate();
-  const { cart, updateCart, removeFromCart, loading } = useCart();
+  const { cart, updateCart, removeFromCart, loading, fetchCart } = useCart();
   const { isAuthenticated, user } = useAuth();
+  const [localCart, setLocalCart] = useState([]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      // Load local cart
+      const stored = JSON.parse(localStorage.getItem('localCart') || '[]');
+      setLocalCart(stored);
+    }
+  }, [isAuthenticated]);
+
+  // Merge local cart when user logs in
+  useEffect(() => {
+    if (isAuthenticated) {
+      const stored = JSON.parse(localStorage.getItem('localCart') || '[]');
+      if (stored.length > 0) {
+        // Merge local cart with server cart
+        stored.forEach(async (item) => {
+          await updateCart([...cart.items.map(i => ({ product_id: i.product_id, quantity: i.quantity })), { product_id: item.product_id, quantity: item.quantity }]);
+        });
+        localStorage.removeItem('localCart');
+        fetchCart();
+      }
+    }
+  }, [isAuthenticated]);
 
   const handleQuantityChange = async (productId, newQuantity) => {
     if (newQuantity < 1) return;
+    
+    if (!isAuthenticated) {
+      const updated = localCart.map(item => 
+        item.product_id === productId ? { ...item, quantity: newQuantity } : item
+      );
+      setLocalCart(updated);
+      localStorage.setItem('localCart', JSON.stringify(updated));
+      return;
+    }
     
     const updatedItems = cart.items.map(item => 
       item.product_id === productId 
@@ -33,26 +66,39 @@ export default function CartPage() {
   };
 
   const handleRemove = async (productId, productName) => {
+    if (!isAuthenticated) {
+      const updated = localCart.filter(item => item.product_id !== productId);
+      setLocalCart(updated);
+      localStorage.setItem('localCart', JSON.stringify(updated));
+      toast.success(`Removed ${productName} from cart`);
+      return;
+    }
+    
     await removeFromCart(productId);
     toast.success(`Removed ${productName} from cart`);
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" data-testid="cart-page-unauthenticated">
-        <div className="text-center">
-          <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h2 className="font-serif text-2xl font-medium mb-2">Sign in to view your cart</h2>
-          <p className="text-muted-foreground mb-6">Create an account to start shopping</p>
-          <Button onClick={() => navigate('/login')} className="rounded-full">
-            Sign In
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const handleCheckout = () => {
+    if (!isAuthenticated) {
+      toast.info('Please sign in to checkout');
+      navigate('/login');
+      return;
+    }
+    navigate('/checkout');
+  };
 
-  if (cart.items.length === 0) {
+  // Use local cart if not authenticated
+  const displayCart = isAuthenticated ? cart : {
+    items: localCart.map(item => ({
+      ...item,
+      product: item.product,
+      item_total: (item.product?.discount_price || item.product?.price || 0) * item.quantity
+    })),
+    subtotal: localCart.reduce((sum, item) => sum + (item.product?.discount_price || item.product?.price || 0) * item.quantity, 0),
+    loyalty_points_earnable: localCart.reduce((sum, item) => sum + (item.product?.loyalty_points_earn || 0) * item.quantity, 0)
+  };
+
+  if (displayCart.items.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center" data-testid="cart-page-empty">
         <div className="text-center">
@@ -84,7 +130,7 @@ export default function CartPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-6">
-            {cart.items.map((item, idx) => (
+            {displayCart.items.map((item, idx) => (
               <motion.div
                 key={item.product_id}
                 initial={{ opacity: 0, y: 20 }}
@@ -176,7 +222,7 @@ export default function CartPage() {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">${cart.subtotal?.toFixed(2)}</span>
+                  <span className="font-medium">${displayCart.subtotal?.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
@@ -185,18 +231,18 @@ export default function CartPage() {
               </div>
 
               {/* Loyalty Points */}
-              {cart.loyalty_points_earnable > 0 && (
+              {displayCart.loyalty_points_earnable > 0 && (
                 <div className="flex items-center justify-between p-4 bg-secondary rounded-sm mb-6">
                   <div className="flex items-center space-x-2">
                     <Star className="h-4 w-4 text-amber-600" />
                     <span className="text-sm">Points you'll earn</span>
                   </div>
-                  <span className="font-medium">+{cart.loyalty_points_earnable}</span>
+                  <span className="font-medium">+{displayCart.loyalty_points_earnable}</span>
                 </div>
               )}
 
               {/* User Points */}
-              {user && user.loyalty_points > 0 && (
+              {isAuthenticated && user && user.loyalty_points > 0 && (
                 <div className="flex items-center justify-between text-sm mb-6">
                   <span className="text-muted-foreground">Your available points</span>
                   <span className="font-medium">{user.loyalty_points}</span>
@@ -206,21 +252,21 @@ export default function CartPage() {
               <div className="border-t pt-4 mb-6">
                 <div className="flex justify-between text-lg">
                   <span className="font-medium">Total</span>
-                  <span className="font-semibold">${cart.subtotal?.toFixed(2)}</span>
+                  <span className="font-semibold">${displayCart.subtotal?.toFixed(2)}</span>
                 </div>
               </div>
 
               <Button 
-                onClick={() => navigate('/checkout')}
+                onClick={handleCheckout}
                 className="w-full btn-primary"
                 data-testid="checkout-btn"
               >
-                Proceed to Checkout
+                {isAuthenticated ? 'Proceed to Checkout' : 'Sign In to Checkout'}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
 
               <p className="text-xs text-center text-muted-foreground mt-4">
-                Taxes and shipping calculated at checkout
+                {isAuthenticated ? 'Taxes and shipping calculated at checkout' : 'Sign in to complete your purchase'}
               </p>
             </div>
           </div>

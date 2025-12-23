@@ -13,6 +13,27 @@ export const ProductCard = ({ product, index = 0 }) => {
   const handleAddToCart = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Store in local cart if not logged in
+    if (!localStorage.getItem('token')) {
+      const localCart = JSON.parse(localStorage.getItem('localCart') || '[]');
+      const existingIdx = localCart.findIndex(item => item.product_id === product.id);
+      if (existingIdx >= 0) {
+        localCart[existingIdx].quantity += 1;
+      } else {
+        localCart.push({ product_id: product.id, quantity: 1, product });
+      }
+      localStorage.setItem('localCart', JSON.stringify(localCart));
+      toast.success('Added to cart', {
+        description: product.name,
+        action: {
+          label: 'View Cart',
+          onClick: () => navigate('/cart'),
+        },
+      });
+      return;
+    }
+    
     const success = await addToCart(product.id, 1);
     if (success) {
       toast.success('Added to cart', {
@@ -22,9 +43,6 @@ export const ProductCard = ({ product, index = 0 }) => {
           onClick: () => navigate('/cart'),
         },
       });
-    } else {
-      toast.error('Please login to add items to cart');
-      navigate('/login');
     }
   };
 

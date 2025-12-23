@@ -720,6 +720,27 @@ async def get_order(order_id: str, user: dict = Depends(get_current_user)):
     order["items"] = items_with_details
     return order
 
+@api_router.put("/orders/{order_id}/status")
+async def update_order_status_user(order_id: str, status: str, user: dict = Depends(get_current_user)):
+    """Update order status - for testing purposes"""
+    valid_statuses = ["pending", "confirmed", "processing", "ready_for_pickup", "shipped", "in_transit", "out_for_delivery", "delivered", "cancelled"]
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Valid: {valid_statuses}")
+    
+    order = await db.orders.find_one({"id": order_id, "user_id": user["id"]}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    result = await db.orders.update_one(
+        {"id": order_id},
+        {
+            "$set": {"order_status": status},
+            "$push": {"tracking_status": {"status": status, "timestamp": datetime.now(timezone.utc).isoformat()}}
+        }
+    )
+    
+    return {"message": "Order status updated", "status": status}
+
 # ============== WALLET & LOYALTY ROUTES ==============
 
 @api_router.get("/wallet")

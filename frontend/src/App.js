@@ -132,9 +132,22 @@ const AppContent = () => {
                   </ProtectedRoute>
                 } />
                 <Route path="/orders" element={<OrdersPage />} />
-                <Route path="/orders/:id" element={<OrdersPage />} />
+                <Route path="/orders/:id" element={
+                  <ProtectedRoute>
+                    <OrderDetailPage />
+                  </ProtectedRoute>
+                } />
                 <Route path="/loyalty" element={<LoyaltyPage />} />
-                <Route path="/profile" element={<LoyaltyPage />} />
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <DashboardPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <DashboardPage />
+                  </ProtectedRoute>
+                } />
                 <Route path="/wallet" element={<LoyaltyPage />} />
               </Routes>
             </main>

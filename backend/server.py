@@ -295,7 +295,24 @@ async def get_airports():
         ]
         await db.airports.insert_many(default_airports)
         airports = default_airports
-    return airports
+    # Remove duplicates by code
+    seen = set()
+    unique = []
+    for a in airports:
+        if a["code"] not in seen:
+            seen.add(a["code"])
+            unique.append(a)
+    return unique
+
+@api_router.post("/airports")
+async def create_airport(airport: Airport):
+    # Check if airport with same code exists
+    existing = await db.airports.find_one({"code": airport.code})
+    if existing:
+        return {"message": "Airport already exists", "id": existing.get("id")}
+    airport_dict = airport.model_dump()
+    await db.airports.insert_one(airport_dict)
+    return await db.airports.find_one({"id": airport.id}, {"_id": 0})
 
 # ============== BRAND ROUTES ==============
 

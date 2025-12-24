@@ -105,6 +105,11 @@ const AppContent = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         
+        {/* Admin pages - separate from main site */}
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+        <Route path="/admin/brand-dashboard" element={<BrandDashboardPage />} />
+        
         {/* Main pages with navbar/footer */}
         <Route path="/*" element={
           <>
@@ -171,7 +176,9 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <CartProvider>
-          <AppContent />
+          <AdminAuthProvider>
+            <AppContent />
+          </AdminAuthProvider>
         </CartProvider>
       </AuthProvider>
     </BrowserRouter>

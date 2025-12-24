@@ -6,6 +6,7 @@ import { Toaster } from 'sonner';
 // Context Providers
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { AdminAuthProvider } from './context/AdminAuthContext';
 
 // Components
 import { Navbar } from './components/Navbar';
@@ -24,6 +25,11 @@ import OrdersPage from './pages/OrdersPage';
 import OrderDetailPage from './pages/OrderDetailPage';
 import LoyaltyPage from './pages/LoyaltyPage';
 import DashboardPage from './pages/DashboardPage';
+
+// Admin Pages
+import AdminLoginPage from './pages/admin/AdminLoginPage';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import BrandDashboardPage from './pages/admin/BrandDashboardPage';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 

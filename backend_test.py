@@ -488,6 +488,9 @@ class JetShopAPITester:
             self.test_orders()
             self.test_recommendations()
         
+        # Test Admin Panel APIs
+        self.test_admin_panel_apis()
+        
         # Print summary
         print(f"\n📊 Test Summary:")
         print(f"Tests run: {self.tests_run}")

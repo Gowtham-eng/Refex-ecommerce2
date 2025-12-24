@@ -458,3 +458,177 @@ async def get_all_airports(admin: dict = Depends(get_super_admin)):
     """Get all airports"""
     airports = await db.airports.find({}, {"_id": 0}).to_list(100)
     return airports
+
+# ============== CREATE BRAND ACCOUNT ==============
+
+@admin_router.post("/brands/create-account")
+async def create_brand_account(data: CreateBrandAccount, admin: dict = Depends(get_super_admin)):
+    """Admin creates a new brand/retailer account"""
+    # Check if email exists
+    existing = await db.users.find_one({"email": data.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Create user with brand_admin role
+    user_id = str(uuid.uuid4())
+    user = {
+        "id": user_id,
+        "name": data.name,
+        "email": data.email,
+        "mobile": data.mobile,
+        "password_hash": hash_password(data.password),
+        "role": UserRole.BRAND_ADMIN.value,
+        "is_active": True,
+        "is_verified": True,  # Admin-created accounts are pre-verified
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": admin["id"]
+    }
+    await db.users.insert_one(user)
+    
+    # Create brand profile
+    brand_id = str(uuid.uuid4())
+    brand = {
+        "id": brand_id,
+        "name": data.brand_name,
+        "description": data.brand_description,
+        "logo_url": "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200",
+        "category": data.brand_category,
+        "airport_id": data.airport_id,
+        "is_active": True,
+        "is_verified": True,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.brands.insert_one(brand)
+    
+    # Link admin to brand
+    brand_admin = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "brand_id": brand_id,
+        "permissions": ["view_products", "manage_products", "view_orders", "manage_orders", "view_inventory", "manage_inventory", "view_analytics", "manage_banking"],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.brand_admins.insert_one(brand_admin)
+    
+    return {
+        "message": "Brand account created successfully",
+        "user": {
+            "id": user_id,
+            "name": data.name,
+            "email": data.email,
+            "role": UserRole.BRAND_ADMIN.value
+        },
+        "brand": {
+            "id": brand_id,
+            "name": data.brand_name,
+            "category": data.brand_category
+        }
+    }
+
+# ============== UNIFIED LOGIN ==============
+
+@admin_router.post("/unified-login")
+async def unified_login(credentials: AdminLogin):
+    """
+    Unified login for both Admin and Brand users.
+    Checks admin first, then brand_admin.
+    Returns role so frontend knows where to redirect.
+    """
+    # Ensure default admins exist
+    await ensure_super_admins_exist()
+    
+    # First check if super_admin
+    user = await db.users.find_one({"email": credentials.email, "role": "super_admin"}, {"_id": 0})
+    
+    if user:
+        if not verify_password(credentials.password, user.get("password_hash", "")):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        token = create_token(user["id"], user["email"], "super_admin")
+        return {
+            "message": "Login successful",
+            "token": token,
+            "role": "super_admin",
+            "user": {
+                "id": user["id"],
+                "name": user["name"],
+                "email": user["email"],
+                "role": "super_admin"
+            }
+        }
+    
+    # Check if brand_admin
+    user = await db.users.find_one({"email": credentials.email, "role": UserRole.BRAND_ADMIN.value}, {"_id": 0})
+    
+    if user:
+        if not verify_password(credentials.password, user.get("password_hash", "")):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        if not user.get("is_active"):
+            raise HTTPException(status_code=403, detail="Account is deactivated")
+        
+        # Get brand info
+        brand_admin = await db.brand_admins.find_one({"user_id": user["id"]}, {"_id": 0})
+        brand = None
+        brand_id = None
+        if brand_admin:
+            brand_id = brand_admin["brand_id"]
+            brand = await db.brands.find_one({"id": brand_id}, {"_id": 0})
+        
+        # Create token with brand_id
+        payload = {
+            "user_id": user["id"],
+            "email": user["email"],
+            "role": UserRole.BRAND_ADMIN.value,
+            "brand_id": brand_id,
+            "exp": datetime.now(timezone.utc) + timedelta(days=7)
+        }
+        token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        
+        return {
+            "message": "Login successful",
+            "token": token,
+            "role": "brand_admin",
+            "user": {
+                "id": user["id"],
+                "name": user["name"],
+                "email": user["email"],
+                "role": UserRole.BRAND_ADMIN.value
+            },
+            "brand": brand
+        }
+    
+    raise HTTPException(status_code=401, detail="Invalid credentials")
+
+# ============== TRACKING STATUS UPDATE ==============
+
+@admin_router.put("/orders/{order_id}/tracking")
+async def update_order_tracking(
+    order_id: str,
+    status: str,
+    message: str = None,
+    admin: dict = Depends(get_super_admin)
+):
+    """Update order tracking status with detailed message"""
+    tracking_entry = {
+        "status": status,
+        "message": message or status,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "updated_by": "admin",
+        "admin_id": admin["id"]
+    }
+    
+    result = await db.orders.update_one(
+        {"id": order_id},
+        {
+            "$set": {"order_status": status},
+            "$push": {"tracking_status": tracking_entry}
+        }
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    return {"message": "Tracking status updated", "tracking": tracking_entry}

@@ -569,7 +569,7 @@ async def update_brand_order_status(
     admin: dict = Depends(get_brand_admin)
 ):
     """Update order status from brand side"""
-    valid_statuses = ["accepted", "preparing", "ready_for_pickup", "cancelled"]
+    valid_statuses = ["accepted", "preparing", "ready_for_pickup", "shipped", "out_for_delivery", "delivered", "cancelled"]
     if status not in valid_statuses:
         raise HTTPException(status_code=400, detail=f"Invalid status. Valid: {valid_statuses}")
     
@@ -582,22 +582,77 @@ async def update_brand_order_status(
     status_mapping = {
         "accepted": "confirmed",
         "preparing": "processing",
-        "ready_for_pickup": "ready_for_pickup"
+        "ready_for_pickup": "ready_for_pickup",
+        "shipped": "shipped",
+        "out_for_delivery": "out_for_delivery",
+        "delivered": "delivered",
+        "cancelled": "cancelled"
     }
     
     order_status = status_mapping.get(status, status)
+    
+    # Get brand name for tracking
+    brand = await db.brands.find_one({"id": admin["brand_id"]}, {"_id": 0, "name": 1})
+    brand_name = brand.get("name", "Brand") if brand else "Brand"
     
     await db.orders.update_one(
         {"id": order_id},
         {
             "$set": {"order_status": order_status},
-            "$push": {"tracking_status": {"status": f"Brand: {status}", "timestamp": datetime.now(timezone.utc).isoformat()}}
+            "$push": {"tracking_status": {
+                "status": order_status,
+                "message": f"{brand_name}: Order {status}",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "updated_by": "brand",
+                "brand_id": admin["brand_id"]
+            }}
         }
     )
     
     await log_audit(admin["id"], admin["role"], "update_status", "order", order_id, {"status": status}, request)
     
     return {"message": "Order status updated", "status": order_status}
+
+@brand_router.put("/orders/{order_id}/tracking")
+async def update_brand_order_tracking(
+    order_id: str,
+    status: str,
+    message: str = None,
+    request: Request = None,
+    admin: dict = Depends(get_brand_admin)
+):
+    """Update order tracking with custom message"""
+    # Verify order has items from this brand
+    order = await db.orders.find_one({"id": order_id, "items.brand_id": admin["brand_id"]})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Get brand name
+    brand = await db.brands.find_one({"id": admin["brand_id"]}, {"_id": 0, "name": 1})
+    brand_name = brand.get("name", "Brand") if brand else "Brand"
+    
+    tracking_entry = {
+        "status": status,
+        "message": message or f"{brand_name}: {status}",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "updated_by": "brand",
+        "brand_id": admin["brand_id"],
+        "brand_name": brand_name
+    }
+    
+    await db.orders.update_one(
+        {"id": order_id},
+        {
+            "$set": {"order_status": status},
+            "$push": {"tracking_status": tracking_entry}
+        }
+    )
+    
+    if request:
+        await log_audit(admin["id"], admin["role"], "update_tracking", "order", order_id, {"status": status, "message": message}, request)
+    
+    return {"message": "Tracking updated", "tracking": tracking_entry}
+
 
 # ============== ANALYTICS ==============
 

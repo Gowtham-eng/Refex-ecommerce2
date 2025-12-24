@@ -632,3 +632,26 @@ async def update_order_tracking(
         raise HTTPException(status_code=404, detail="Order not found")
     
     return {"message": "Tracking status updated", "tracking": tracking_entry}
+
+# ============== RESET BRAND PASSWORD ==============
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    new_password: str
+
+@admin_router.post("/brands/reset-password")
+async def reset_brand_password(data: ResetPasswordRequest, admin: dict = Depends(get_super_admin)):
+    """Admin resets a brand user's password"""
+    # Find brand user
+    user = await db.users.find_one({"email": data.email, "role": UserRole.BRAND_ADMIN.value})
+    if not user:
+        raise HTTPException(status_code=404, detail="Brand user not found")
+    
+    # Update password
+    new_hash = hash_password(data.new_password)
+    await db.users.update_one(
+        {"email": data.email},
+        {"$set": {"password_hash": new_hash}}
+    )
+    
+    return {"message": f"Password reset successfully for {data.email}"}

@@ -68,23 +68,24 @@ async def get_super_admin(credentials: HTTPAuthorizationCredentials = Depends(se
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-async def ensure_super_admin_exists():
-    """Create default super admin if not exists"""
-    existing = await db.users.find_one({"email": SUPER_ADMIN_EMAIL, "role": "super_admin"})
-    if not existing:
-        admin_id = str(uuid.uuid4())
-        admin = {
-            "id": admin_id,
-            "name": "Super Admin",
-            "email": SUPER_ADMIN_EMAIL,
-            "mobile": "+911234567890",
-            "password_hash": hash_password(SUPER_ADMIN_PASSWORD),
-            "role": "super_admin",
-            "is_active": True,
-            "created_at": datetime.now(timezone.utc).isoformat()
-        }
-        await db.users.insert_one(admin)
-        print(f"Super admin created: {SUPER_ADMIN_EMAIL}")
+async def ensure_super_admins_exist():
+    """Create default super admins if not exist"""
+    for admin_data in DEFAULT_ADMINS:
+        existing = await db.users.find_one({"email": admin_data["email"], "role": "super_admin"})
+        if not existing:
+            admin_id = str(uuid.uuid4())
+            admin = {
+                "id": admin_id,
+                "name": admin_data["name"],
+                "email": admin_data["email"],
+                "mobile": "+911234567890",
+                "password_hash": hash_password(admin_data["password"]),
+                "role": "super_admin",
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.users.insert_one(admin)
+            print(f"Super admin created: {admin_data['email']}")
 
 # ============== AUTHENTICATION ==============
 

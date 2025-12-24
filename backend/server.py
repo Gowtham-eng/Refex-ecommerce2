@@ -949,6 +949,12 @@ try:
 except ImportError as e:
     logging.warning(f"Could not import logistics_router: {e}")
 
+try:
+    from routes.super_admin import admin_router
+    app.include_router(admin_router)
+except ImportError as e:
+    logging.warning(f"Could not import admin_router: {e}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,

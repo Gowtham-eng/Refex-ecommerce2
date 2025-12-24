@@ -341,11 +341,24 @@ async def create_product(
     if existing:
         raise HTTPException(status_code=400, detail="SKU already exists for this brand")
     
+    # Get brand name
+    brand = await db.brands.find_one({"id": admin["brand_id"]}, {"_id": 0, "name": 1})
+    brand_name = brand.get("name", "") if brand else ""
+    
     product_id = str(uuid.uuid4())
     product_data = {
         "id": product_id,
         "brand_id": admin["brand_id"],
-        **product.model_dump(),
+        "brand_name": brand_name,
+        "name": product.name,
+        "description": product.description,
+        "price": product.price,
+        "sku": product.sku,
+        "stock": product.stock,
+        "category": product.category,
+        "image_url": product.image_url,
+        "loyalty_points_earn": product.loyalty_points_earn,
+        "is_duty_free": product.is_duty_free,
         "is_active": True,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat()
@@ -366,6 +379,8 @@ async def create_product(
     await log_audit(admin["id"], admin["role"], "create", "product", product_id, 
                    {"name": product.name, "sku": product.sku}, request)
     
+    # Return without _id
+    del product_data["_id"] if "_id" in product_data else None
     return {"message": "Product created", "id": product_id, "product": product_data}
 
 @brand_router.put("/products/{product_id}")

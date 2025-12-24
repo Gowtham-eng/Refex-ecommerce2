@@ -14,6 +14,8 @@ import bcrypt
 from datetime import datetime, timezone, timedelta
 from pydantic import BaseModel, EmailStr
 
+from models.rbac import UserRole
+
 # Router
 admin_router = APIRouter(prefix="/api/super-admin", tags=["Super Admin"])
 
@@ -27,9 +29,11 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Default super admin credentials
-SUPER_ADMIN_EMAIL = "admin@jetshop.com"
-SUPER_ADMIN_PASSWORD = "Admin@123"
+# Default super admin credentials - 2 admins
+DEFAULT_ADMINS = [
+    {"email": "admin1@jetshop.com", "password": "admin123", "name": "Admin One"},
+    {"email": "admin2@jetshop.com", "password": "admin123", "name": "Admin Two"}
+]
 
 # ============== HELPERS ==============
 

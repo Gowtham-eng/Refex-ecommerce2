@@ -380,7 +380,8 @@ async def create_product(
                    {"name": product.name, "sku": product.sku}, request)
     
     # Return without _id
-    del product_data["_id"] if "_id" in product_data else None
+    if "_id" in product_data:
+        del product_data["_id"]
     return {"message": "Product created", "id": product_id, "product": product_data}
 
 @brand_router.put("/products/{product_id}")

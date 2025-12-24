@@ -263,6 +263,202 @@ class JetShopAPITester:
         if success:
             print(f"   Seeded {response.get('brands', 0)} brands and {response.get('products', 0)} products")
 
+    def test_admin_unified_login(self):
+        """Test Admin Unified Login API"""
+        print("\n🔍 Testing Admin Unified Login...")
+        
+        # Test admin1 login
+        admin1_data = {
+            "email": "admin1@jetshop.com",
+            "password": "admin123"
+        }
+        
+        success, response = self.run_test("Admin1 unified login", "POST", "super-admin/unified-login", 200, admin1_data)
+        if success and response.get('token'):
+            print(f"   Admin1 login successful - Role: {response.get('role')}")
+            if response.get('role') == 'super_admin':
+                self.admin_token = response['token']
+                self.admin_user = response['user']
+            else:
+                self.log_test("Admin1 role check", False, f"Expected super_admin, got {response.get('role')}")
+        
+        # Test admin2 login
+        admin2_data = {
+            "email": "admin2@jetshop.com", 
+            "password": "admin123"
+        }
+        
+        success, response = self.run_test("Admin2 unified login", "POST", "super-admin/unified-login", 200, admin2_data)
+        if success and response.get('role') == 'super_admin':
+            print(f"   Admin2 login successful - Role: {response.get('role')}")
+        
+        # Test invalid credentials
+        invalid_data = {
+            "email": "invalid@jetshop.com",
+            "password": "wrongpass"
+        }
+        
+        self.run_test("Invalid admin login", "POST", "super-admin/unified-login", 401, invalid_data)
+
+    def test_admin_dashboard(self):
+        """Test Admin Dashboard API"""
+        print("\n🔍 Testing Admin Dashboard...")
+        
+        if not hasattr(self, 'admin_token') or not self.admin_token:
+            self.log_test("Admin dashboard", False, "No admin token available")
+            return
+        
+        # Temporarily store current token and set admin token
+        user_token = self.token
+        self.token = self.admin_token
+        
+        success, dashboard = self.run_test("Admin dashboard stats", "GET", "super-admin/dashboard", 200)
+        if success:
+            stats = ['total_brands', 'total_products', 'total_orders', 'total_customers', 'pending_orders', 'total_revenue']
+            for stat in stats:
+                if stat in dashboard:
+                    print(f"   {stat}: {dashboard[stat]}")
+        
+        # Restore user token
+        self.token = user_token
+
+    def test_admin_create_brand_account(self):
+        """Test Admin Create Brand Account"""
+        print("\n🔍 Testing Admin Create Brand Account...")
+        
+        if not hasattr(self, 'admin_token') or not self.admin_token:
+            self.log_test("Admin create brand", False, "No admin token available")
+            return
+        
+        # Get airports first for airport_id
+        airports_success, airports = self.run_test("Get airports for brand creation", "GET", "airports", 200)
+        if not airports_success or not airports:
+            self.log_test("Admin create brand", False, "No airports available")
+            return
+        
+        airport_id = airports[0]['id']
+        
+        # Temporarily store current token and set admin token
+        user_token = self.token
+        self.token = self.admin_token
+        
+        timestamp = datetime.now().strftime('%H%M%S')
+        brand_data = {
+            "name": f"Test Brand Admin {timestamp}",
+            "email": f"testbrand{timestamp}@example.com",
+            "mobile": f"+1234567{timestamp[-3:]}",
+            "password": "brand123",
+            "brand_name": "Test Brand Store",
+            "brand_description": "A test brand created by admin",
+            "brand_category": "Electronics",
+            "airport_id": airport_id
+        }
+        
+        success, response = self.run_test("Admin create brand account", "POST", "super-admin/brands/create-account", 200, brand_data)
+        if success:
+            print(f"   Created brand: {response.get('brand', {}).get('name')}")
+            print(f"   Brand user: {response.get('user', {}).get('email')}")
+            self.test_brand_email = brand_data['email']
+            self.test_brand_password = brand_data['password']
+        
+        # Restore user token
+        self.token = user_token
+
+    def test_brand_unified_login(self):
+        """Test Brand Login via Unified Login"""
+        print("\n🔍 Testing Brand Unified Login...")
+        
+        if not hasattr(self, 'test_brand_email') or not self.test_brand_email:
+            self.log_test("Brand unified login", False, "No test brand created")
+            return
+        
+        brand_login_data = {
+            "email": self.test_brand_email,
+            "password": self.test_brand_password
+        }
+        
+        success, response = self.run_test("Brand unified login", "POST", "super-admin/unified-login", 200, brand_login_data)
+        if success and response.get('token'):
+            print(f"   Brand login successful - Role: {response.get('role')}")
+            if response.get('role') == 'brand_admin':
+                self.brand_token = response['token']
+                self.brand_user = response['user']
+                self.brand_info = response.get('brand')
+                print(f"   Brand: {self.brand_info.get('name') if self.brand_info else 'Unknown'}")
+            else:
+                self.log_test("Brand role check", False, f"Expected brand_admin, got {response.get('role')}")
+
+    def test_brand_products_api(self):
+        """Test Brand Products API"""
+        print("\n🔍 Testing Brand Products API...")
+        
+        if not hasattr(self, 'brand_token') or not self.brand_token:
+            self.log_test("Brand products API", False, "No brand token available")
+            return
+        
+        # Temporarily store current token and set brand token
+        user_token = self.token
+        self.token = self.brand_token
+        
+        success, products_response = self.run_test("Brand products", "GET", "brand-admin/products", 200)
+        if success:
+            products = products_response.get('products', [])
+            total = products_response.get('total', 0)
+            print(f"   Found {len(products)} products (total: {total}) for brand")
+        
+        # Restore user token
+        self.token = user_token
+
+    def test_brand_orders_api(self):
+        """Test Brand Orders API"""
+        print("\n🔍 Testing Brand Orders API...")
+        
+        if not hasattr(self, 'brand_token') or not self.brand_token:
+            self.log_test("Brand orders API", False, "No brand token available")
+            return
+        
+        # Temporarily store current token and set brand token
+        user_token = self.token
+        self.token = self.brand_token
+        
+        success, orders_response = self.run_test("Brand orders", "GET", "brand-admin/orders", 200)
+        if success:
+            orders = orders_response.get('orders', [])
+            total = orders_response.get('total', 0)
+            print(f"   Found {len(orders)} orders (total: {total}) for brand")
+        
+        # Restore user token
+        self.token = user_token
+
+    def test_admin_panel_apis(self):
+        """Test all Admin Panel APIs"""
+        print("\n🚀 Testing Admin Panel Backend APIs...")
+        
+        # Initialize admin-specific attributes
+        self.admin_token = None
+        self.admin_user = None
+        self.brand_token = None
+        self.brand_user = None
+        self.brand_info = None
+        self.test_brand_email = None
+        self.test_brand_password = None
+        
+        # Test admin login
+        self.test_admin_unified_login()
+        
+        # Test admin dashboard
+        self.test_admin_dashboard()
+        
+        # Test admin create brand account
+        self.test_admin_create_brand_account()
+        
+        # Test brand login
+        self.test_brand_unified_login()
+        
+        # Test brand APIs
+        self.test_brand_products_api()
+        self.test_brand_orders_api()
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print("🚀 Starting JetShop API Tests...")

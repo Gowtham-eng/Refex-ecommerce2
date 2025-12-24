@@ -93,11 +93,22 @@ class AdminLogin(BaseModel):
     email: EmailStr
     password: str
 
+class CreateBrandAccount(BaseModel):
+    """Model for admin to create brand accounts"""
+    name: str
+    email: EmailStr
+    mobile: str
+    password: str
+    brand_name: str
+    brand_description: str
+    brand_category: str
+    airport_id: str
+
 @admin_router.post("/login")
 async def login_super_admin(credentials: AdminLogin):
     """Login for super admin"""
-    # Ensure super admin exists
-    await ensure_super_admin_exists()
+    # Ensure super admins exist
+    await ensure_super_admins_exist()
     
     user = await db.users.find_one({"email": credentials.email, "role": "super_admin"}, {"_id": 0})
     if not user:
